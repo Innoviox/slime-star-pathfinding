@@ -65,9 +65,9 @@ class Grid(object):
         return neighbors
 
     def toStr(self, start, end, path):
-        s = '+{}+\n'.format('-' * len(self.nodes[0]))
+        s = '{}{}{}\n'.format(chr(9484),chr(9472) * len(self.nodes[0]),chr(9488))
         for row in self.nodes:
-            s += '|'
+            s += chr(9474)
             for node in row:
                 if node.walkable:
                     if node == start:
@@ -75,16 +75,12 @@ class Grid(object):
                     elif node == end:
                         s += 'e'
                     elif node.position() in path:
-                        s += "."#chr(183)
+                        s += chr(183)
                     else:
                         s += ' '  # empty
                 else:
-                    s += '#'  # wall
-            s += '|\n'
-        s += '+{}+\n'.format('-' * len(self.nodes[0]))
+                    s += chr(9635) # wall
+            s += '{}\n'.format(chr(9474))
+        s += '{}{}{}\n'.format(chr(9492),chr(9472) * len(self.nodes[0]),chr(9496))
 
         return s
-
-
-
-			
