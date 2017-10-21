@@ -21,11 +21,9 @@ class AStar(object):
             node = heapq.nsmallest(1, open_list)[0]
             open_list.remove(node)
             node.closed = True
+            yield node.backtrace()
             if node == end:
-                yield node.backtrace()
                 return
-            else:
-                yield node.backtrace()
             neighbors = grid.neighbors(node)
             for neighbor in neighbors:
                 if neighbor.closed:
