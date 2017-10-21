@@ -8,7 +8,11 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from pathfinding.node import Node
 from pathfinding.grid import Grid
 from pathfinding.core import AStar
+
 import tkinter as tk
+
+import time
+from copy import deepcopy
 BW = 20
 BH = 20
 OFFSET = 5
@@ -23,7 +27,7 @@ class _Node(object):
 class GridFrame(tk.Frame):
     def __init__(self, master = None, matrix = None):
         if matrix is None:
-            matrix = [[0] * 20] * 20
+            matrix = [[0 for i in range(20)] for i in range(20)]
         self.grid = Grid(matrix)
         self.nodes = self.grid.nodes
         self.w = self.grid.width
@@ -41,22 +45,29 @@ class GridFrame(tk.Frame):
         self.grabbing_end = False
         self.set = []
         self.pack(fill=tk.BOTH, expand=1)
+        self.touched = []
+        self.ends = []
+        self.solving = False
         
     def drawGrid(self):
         for square in self.squares:
             self.canvas.delete(square)
         self.squares = []
-        
         for y in range(self.h):
             for x in range(self.w):
                 outline = "black"
                 if self.grid.walkable(x, y):
                     fill = "white"
+                    if [x, y] in self.touched:
+                        fill = "light blue"
+                    if [x, y] in self.ends:
+                        fill = "yellow"
+                    for square in [self.start, self.end]:
+                        if (x, y) == (square.x, square.y):
+                            fill = square.color
                 else:
                     fill = "black"
-                for square in [self.start, self.end]:
-                    if (x, y) == (square.x, square.y):
-                        fill = square.color
+
                 self.squares.append(self.canvas.create_rectangle(OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH, outline = outline, fill = fill))
         self.canvas.pack(fill=tk.BOTH, expand=1)
         
@@ -65,7 +76,13 @@ class GridFrame(tk.Frame):
             self.canvas.delete(line)
         self.lines = []
         for ((x1, y1), (x2, y2)) in zip(path, path[1:]):
-            self.lines.append(self.canvas.create_line(*map(lambda i: OFFSET + i * BW + BW / 2, (x1, y1, x2, y2)), fill = "blue", dash = (4, 2)))
+            self.lines.append(self.canvas.create_line(*map(lambda i: OFFSET + i * BW + BW / 2, (x1, y1, x2, y2)), fill = "red", dash = (4, 2)))
+        for node in path:
+            self.touched.append(node)
+        for node in self.ends[:]:
+            if node in path:
+                self.ends.remove(node)
+        self.ends.append(path[-1])
         self.canvas.pack(fill=tk.BOTH, expand=1)
 
     def setStart(self, x, y):
@@ -79,6 +96,9 @@ class GridFrame(tk.Frame):
             self.end.y = y
 
     def check(self, event):
+        if self.solving:
+            return
+        self.rte()
         ex, ey = event.x, event.y
         gx, gy = (ex - OFFSET) // BW, (ey - OFFSET) // BH
         if self.grabbing_start:
@@ -107,7 +127,13 @@ class GridFrame(tk.Frame):
     def endNode(self):
         return self.grid.node(*self.end.xy())
 
-                
+    def reset(self, grid):
+        self.grid = Grid(grid)
+
+    def rte(self):
+        self.touched = []
+        self.ends = []
+        
 class GridView(tk.Tk):
     def __init__(self, matrix = None):
         tk.Tk.__init__(self)
@@ -115,7 +141,7 @@ class GridView(tk.Tk):
         self.solveButton = tk.Button(self, text = "Solve!", command = self.solve)
         self.solveButton.pack()
         self.geometry("{width}x{height}".format(width = self.gridFrame.w * BW + OFFSET * 2, height = self.gridFrame.h * BH + OFFSET * 2 + 50))
-        self.resizable(False, False)
+        #self.resizable(False, False)
         
     def drawGrid(self):
         self.gridFrame.drawGrid()
@@ -130,6 +156,15 @@ class GridView(tk.Tk):
         self.gridFrame.setEnd(x, y)
 
     def solve(self):
-        oldGrid = self.gridFrame.grid.matrix
-        self.drawPath(AStar.find_path(self.gridFrame.startNode(), self.gridFrame.endNode(), self.gridFrame.grid))
-        self.gridFrame.grid = Grid(oldGrid)
+        self.gridFrame.solving = True
+        self.gridFrame.rte()
+        oldGrid = deepcopy(self.gridFrame.grid.matrix)
+        for path in AStar.find_path(self.gridFrame.startNode(), self.gridFrame.endNode(), self.gridFrame.grid):
+            self.drawGrid()
+            self.drawPath(path)
+            self.gridFrame.update()
+            time.sleep(0.01)
+        self.gridFrame.reset(oldGrid)
+        self.drawGrid()
+        self.drawPath(path)
+        self.gridFrame.solving = False

@@ -22,8 +22,10 @@ class AStar(object):
             open_list.remove(node)
             node.closed = True
             if node == end:
-                return node.backtrace()
-
+                yield node.backtrace()
+                return
+            else:
+                yield node.backtrace()
             neighbors = grid.neighbors(node)
             for neighbor in neighbors:
                 if neighbor.closed:
