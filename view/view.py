@@ -37,7 +37,7 @@ class GridFrame(tk.Frame):
         self.start = _Node(0, 0, "green")
         self.end = _Node(self.w - 1, self.h - 1, "red")
         self.canvas = tk.Canvas(self, width = OFFSET + BW * self.w, height = OFFSET + BH * self.h)
-        self.squares = []
+        self.squares = {}
         self.lines = []
         self.canvas.bind("<Button-1>", self.check1)
         self.canvas.bind("<B1-Motion>", self.check2)
@@ -50,43 +50,68 @@ class GridFrame(tk.Frame):
         self.solving = False
         self.changing = {}
         self.checked = True
-        
-    def drawGrid(self):
-        for square in self.squares:
-            self.canvas.delete(square)
-        self.squares = []
-        toDraw = []
+        self.drawnFirst = False
+        self.ose = []
+
+    def drawDefaultGrid(self):
+        self.drawnFirst = True
         for y in range(self.h):
             for x in range(self.w):
                 outline = "black"
                 if self.grid.walkable(x, y):
                     fill = "white"
-                    if [x, y] in self.touched:
-                        fill = "light blue"
-                    if [x, y] in self.ends:
-                        fill = "yellow"
                     for square in [self.start, self.end]:
                         if (x, y) == (square.x, square.y):
                             fill = square.color
                 else:
                     fill = "black"
                 p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH
-                if (x, y) in self.changing.keys():
-                    n = self.changing[(x, y)]
-                    p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH,
-                    e = [FRAMES - n, n][n < FRAMES / 2]
-                    p1 -= e
-                    p2 -= e
-                    p3 += e
-                    p4 += e
-                    self.changing[(x, y)] -= 1
-                    if n == 0:
-                        self.changing.pop((x, y))
-                    toDraw.append((p1, p2, p3, p4, outline, fill))
-                else:
-                    self.squares.append(self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill))
-        for (p1, p2, p3, p4, outline, fill) in toDraw:
-            self.squares.append(self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill))
+                self.squares[(x, y)] = self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill)
+        
+    def drawGrid(self):
+        #for square in self.squares:
+#            self.canvas.delete(square)
+#        self.squares = []
+        toDraw = []
+        for (x, y) in [i for i in self.ose]:
+            p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH
+            self.squares[(x, y)] = self.canvas.create_rectangle(p1, p2, p3, p4, outline = "black", fill = "white")
+            self.ose.remove((x, y))
+        for y in range(self.h):
+            for x in range(self.w):
+                if (x, y) in self.changing.keys() or [x, y] in self.touched or [x, y] in self.ends or (x, y) in [self.start.xy(), self.end.xy()]:
+                    self.canvas.delete(self.squares[(x, y)])
+                    outline = "black"
+                    if self.grid.walkable(x, y):
+                        fill = "white"
+                        if [x, y] in self.touched:
+                            fill = "light blue"
+                        if [x, y] in self.ends:
+                            fill = "yellow"
+                        for square in [self.start, self.end]:
+                            if (x, y) == (square.x, square.y):
+                                fill = square.color
+                    else:
+                        fill = "black"
+                    p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH
+                    if (x, y) in self.changing.keys():
+                        n = self.changing[(x, y)]
+                        p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH,
+                        e = [FRAMES - n, n][n < FRAMES / 2]
+                        p1 -= e
+                        p2 -= e
+                        p3 += e
+                        p4 += e
+                        self.changing[(x, y)] -= 1
+                        if n == 0:
+                            self.changing.pop((x, y))
+                        toDraw.append((x, y, p1, p2, p3, p4, outline, fill))
+                    else:
+                        self.squares[(x, y)] = self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill)
+        for (x, y, p1, p2, p3, p4, outline, fill) in toDraw:
+            self.canvas.delete(self.squares[(x, y)])
+            self.squares[(x, y)] = self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill)
+
         self.canvas.pack(fill=tk.BOTH, expand=1)
         
     def drawPath(self, path):
@@ -124,8 +149,10 @@ class GridFrame(tk.Frame):
         ex, ey = event.x, event.y
         gx, gy = self.getPosition(event)
         if self.grabbing_start:
+            self.ose.append(self.start.xy())
             self.setStart(gx, gy)
         elif self.grabbing_end:
+            self.ose.append(self.end.xy())
             self.setEnd(gx, gy)
         elif (gx, gy) == (self.start.x, self.start.y):
             self.grabbing_start = True
@@ -207,10 +234,13 @@ class GridView(tk.Tk):
     def clear(self):
         if not self.gridFrame.solving:
             self.gridFrame.reset(self.omatrix)
+            self.gridFrame.drawnFirst = False
 
     def mainloop(self):
         while 1:
-            if self.gridFrame.checked:
+            if not self.gridFrame.drawnFirst:
+                self.gridFrame.drawDefaultGrid()
+            elif self.gridFrame.checked:
                 self.drawGrid()
             self.update_idletasks()
             self.update()
