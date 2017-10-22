@@ -26,9 +26,9 @@ class _Node(object):
     def xy(self):
         return self.x, self.y
 class GridFrame(tk.Frame):
-    def __init__(self, master = None, matrix = None):
+    def __init__(self, master = None, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10):
         if matrix is None:
-            matrix = [[0 for i in range(20)] for i in range(20)]
+            matrix = [[0 for i in range(dw)] for i in range(dh)]
         self.grid = Grid(matrix)
         self.nodes = self.grid.nodes
         self.w = self.grid.width
@@ -55,6 +55,7 @@ class GridFrame(tk.Frame):
         for square in self.squares:
             self.canvas.delete(square)
         self.squares = []
+        toDraw = []
         for y in range(self.h):
             for x in range(self.w):
                 outline = "black"
@@ -69,30 +70,22 @@ class GridFrame(tk.Frame):
                             fill = square.color
                 else:
                     fill = "black"
-                p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH,
-                self.squares.append(self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill))
-        for (x, y), n in self.changing.copy().items():
-            outline = "black"
-            if self.grid.walkable(x, y):
-                fill = "white"
-                if [x, y] in self.touched:
-                    fill = "light blue"
-                if [x, y] in self.ends:
-                    fill = "yellow"
-                for square in [self.start, self.end]:
-                    if (x, y) == (square.x, square.y):
-                        fill = square.color
-            else:
-                fill = "black"
-            p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH,
-            e = [FRAMES - n, n][n < FRAMES / 2]
-            p1 -= e
-            p2 -= e
-            p3 += e
-            p4 += e
-            self.changing[(x, y)] -= 1
-            if n == 0:
-                self.changing.pop((x, y))
+                p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH
+                if (x, y) in self.changing.keys():
+                    n = self.changing[(x, y)]
+                    p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH,
+                    e = [FRAMES - n, n][n < FRAMES / 2]
+                    p1 -= e
+                    p2 -= e
+                    p3 += e
+                    p4 += e
+                    self.changing[(x, y)] -= 1
+                    if n == 0:
+                        self.changing.pop((x, y))
+                    toDraw.append((p1, p2, p3, p4, outline, fill))
+                else:
+                    self.squares.append(self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill))
+        for (p1, p2, p3, p4, outline, fill) in toDraw:
             self.squares.append(self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill))
         self.canvas.pack(fill=tk.BOTH, expand=1)
         
@@ -166,9 +159,9 @@ class GridFrame(tk.Frame):
         self.ends = []
         
 class GridView(tk.Tk):
-    def __init__(self, matrix = None):
+    def __init__(self, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10):
         tk.Tk.__init__(self)
-        self.gridFrame = GridFrame(master = self, matrix = matrix)
+        self.gridFrame = GridFrame(master = self, matrix = matrix, dw=dw, dh=dh)
         self.gridFrame.grid_configure(columnspan = 3)
         self.solveButton = tk.Button(self, text = "Solve", command = self.solve)
         self.solveButton.grid_configure(column = 0, row = 1)
