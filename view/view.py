@@ -73,10 +73,11 @@ class GridFrame(tk.Frame):
 #            self.canvas.delete(square)
 #        self.squares = []
         toDraw = []
-        for (x, y) in [i for i in self.ose]:
-            p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH
-            self.squares[(x, y)] = self.canvas.create_rectangle(p1, p2, p3, p4, outline = "black", fill = "white")
-            self.ose.remove((x, y))
+        if self.grabbing_start or self.grabbing_end:
+            for (x, y) in [i for i in self.ose]:
+                p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH
+                self.squares[(x, y)] = self.canvas.create_rectangle(p1, p2, p3, p4, outline = "black", fill = "white")
+                self.ose.remove((x, y))
         for y in range(self.h):
             for x in range(self.w):
                 if (x, y) in self.changing.keys() or [x, y] in self.touched or [x, y] in self.ends or (x, y) in [self.start.xy(), self.end.xy()]:
@@ -86,8 +87,10 @@ class GridFrame(tk.Frame):
                         fill = "white"
                         if [x, y] in self.touched:
                             fill = "light blue"
+                            self.touched.remove([x, y])
                         if [x, y] in self.ends:
                             fill = "yellow"
+                            self.ends.remove([x, y])
                         for square in [self.start, self.end]:
                             if (x, y) == (square.x, square.y):
                                 fill = square.color
@@ -230,6 +233,7 @@ class GridView(tk.Tk):
 
     def stop(self):
         self.gridFrame.solving = False
+        self.gridFrame.rte()
 
     def clear(self):
         if not self.gridFrame.solving:
