@@ -5,13 +5,11 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from pathfinding.node import Node
 from pathfinding.grid import Grid
 from pathfinding.core import AStar
 
 import tkinter as tk
-
-import time
+import file as f
 from copy import deepcopy
 BW = 20
 BH = 20
@@ -21,12 +19,11 @@ class _Node(object):
     def __init__(self, x, y, color):
         self.x = x
         self.y = y
-        self.color = color
-        
+        self.color = color        
     def xy(self):
         return self.x, self.y
 class GridFrame(tk.Frame):
-    def __init__(self, master = None, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10):
+    def __init__(self, master = None, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10, start=None, end=None):
         if matrix is None:
             matrix = [[0 for i in range(dw)] for i in range(dh)]
         self.grid = Grid(matrix)
@@ -34,13 +31,20 @@ class GridFrame(tk.Frame):
         self.w = self.grid.width
         self.h = self.grid.height
         tk.Frame.__init__(self, master, width = OFFSET + BW * self.w, height = OFFSET + BH * self.h)
-        self.start = _Node(0, 0, "green")
-        self.end = _Node(self.w - 1, self.h - 1, "red")
+        if start is None:
+            self.start = _Node(0, 0, "green")
+        else:
+            self.start = _Node(start[0], start[1], "green")
+        
+        if end is None:
+            self.end = _Node(self.w - 1, self.h - 1, "red")
+        else:
+            self.end = _Node(end[0], end[1], "red")
         self.canvas = tk.Canvas(self, width = OFFSET + BW * self.w, height = OFFSET + BH * self.h)
         self.squares = {}
         self.lines = []
-        self.canvas.bind("<Button-1>", self.check1)
-        self.canvas.bind("<B1-Motion>", self.check2)
+        self.canvas.bind("<Button-1>", self.click)
+        self.canvas.bind("<B1-Motion>", self.move)
         self.canvas.bind("<ButtonRelease-1>", self.release)
         self.grabbing_start = False
         self.grabbing_end = False
@@ -52,7 +56,6 @@ class GridFrame(tk.Frame):
         self.checked = True
         self.drawnFirst = False
         self.ose = []
-
     def drawDefaultGrid(self):
         self.drawnFirst = True
         for y in range(self.h):
@@ -67,7 +70,6 @@ class GridFrame(tk.Frame):
                     fill = "black"
                 p1, p2, p3, p4 = OFFSET + x * BW, OFFSET + y * BH, OFFSET + x * BW + BW, OFFSET + y * BH + BH
                 self.squares[(x, y)] = self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill)
-        
     def drawGrid(self):
         #for square in self.squares:
 #            self.canvas.delete(square)
@@ -115,8 +117,7 @@ class GridFrame(tk.Frame):
             self.canvas.delete(self.squares[(x, y)])
             self.squares[(x, y)] = self.canvas.create_rectangle(p1, p2, p3, p4, outline = outline, fill = fill)
 
-        self.canvas.pack(fill=tk.BOTH, expand=1)
-        
+        self.canvas.pack(fill=tk.BOTH, expand=1)        
     def drawPath(self, path):
         for line in self.lines:
             self.canvas.delete(line)
@@ -130,22 +131,18 @@ class GridFrame(tk.Frame):
                 self.ends.remove(node)
         self.ends.append(path[-1])
         self.canvas.pack(fill=tk.BOTH, expand=1)
-
     def setStart(self, x, y):
         if self.grid.walkable(x, y):
             self.start.x = x
             self.start.y = y
-
     def setEnd(self, x, y):
         if self.grid.walkable(x, y):
             self.end.x = x
             self.end.y = y
-
-    def check1(self, event):
+    def click(self, event):
         self.checked = True
-        self.check2(event)
-
-    def check2(self, event):
+        self.move(event)
+    def move(self, event):
         if self.solving:
             return
         self.rte()
@@ -167,31 +164,26 @@ class GridFrame(tk.Frame):
             self.grid.matrix[gy][gx] = int(w)
             self.set.append((gx, gy))
             self.changing[(gx, gy)] = FRAMES
-
     def getPosition(self, event):
         return (event.x - OFFSET) // BW, (event.y - OFFSET) // BH
     def release(self, event):
         self.grabbing_start = False
         self.grabbing_end = False
         self.set = []
-
     def startNode(self):
-        return self.grid.node(*self.start.xy())
-    
+        return self.grid.node(*self.start.xy())    
     def endNode(self):
         return self.grid.node(*self.end.xy())
-
     def reset(self, grid):
         self.grid = Grid(grid)
-
     def rte(self):
         self.touched = []
         self.ends = []
         
 class GridView(tk.Tk):
-    def __init__(self, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10):
+    def __init__(self, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10, start=None, end=None, filename="grid_save"):
         tk.Tk.__init__(self)
-        self.gridFrame = GridFrame(master = self, matrix = matrix, dw=dw, dh=dh)
+        self.gridFrame = GridFrame(master = self, matrix = matrix, dw=dw, dh=dh, start=start, end=end)
         self.gridFrame.grid_configure(columnspan = 3)
         self.solveButton = tk.Button(self, text = "Solve", command = self.solve)
         self.solveButton.grid_configure(column = 0, row = 1)
@@ -199,26 +191,24 @@ class GridView(tk.Tk):
         self.stopButton.grid_configure(column = 1, row = 1)
         self.clearButton = tk.Button(self, text = "Clear", command = self.clear)
         self.clearButton.grid_configure(column = 2, row = 1)
+        self.saveButton = tk.Button(self, text = "Save", command = lambda fn=filename: f.save_state_to_file(self, filename=fn))
+        self.saveButton.grid_configure(column = 2, row = 2)
         self.geometry("{width}x{height}".format(width = self.gridFrame.w * BW + OFFSET * 2, height = self.gridFrame.h * BH + OFFSET * 2 + 50))
         self.omatrix = deepcopy(self.gridFrame.grid.matrix)
-        self.drawGridId = False
-        
+        self.drawGridId = False       
     def drawGrid(self):
-        self.gridFrame.drawGrid()
-        
+        self.gridFrame.drawGrid()      
     def drawPath(self, path):
         self.gridFrame.drawPath(path)
-
     def setStart(self, x, y):
         self.gridFrame.setStart(x, y)
-
     def setEnd(self, x, y):
         self.gridFrame.setEnd(x, y)
-
     def solve(self):
         self.gridFrame.solving = True
         self.gridFrame.checked = False
         self.gridFrame.rte()
+        self.gridFrame.drawDefaultGrid()
         oldGrid = deepcopy(self.gridFrame.grid.matrix)
         self.after_cancel(self.drawGridId)
         self.drawGridId = False
@@ -230,16 +220,14 @@ class GridView(tk.Tk):
         self.gridFrame.reset(oldGrid)
         self.drawPath(path)
         self.gridFrame.solving = False
-
     def stop(self):
-        self.gridFrame.solving = False
-        self.gridFrame.rte()
-
+        self.gridFrame.solving = not self.gridFrame.solving
+        #self.gridFrame.rte()
+        
     def clear(self):
         if not self.gridFrame.solving:
             self.gridFrame.reset(self.omatrix)
             self.gridFrame.drawnFirst = False
-
     def mainloop(self):
         while 1:
             if not self.gridFrame.drawnFirst:
