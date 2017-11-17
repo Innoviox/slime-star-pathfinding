@@ -1,15 +1,12 @@
 import sys
-import os
+sys.path.append('..')
 
-PACKAGE_PARENT = '..'
-SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
-sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
-
-from pathfinding.grid import Grid
-from pathfinding.core import AStar
+from pathfinding.util         import file as f
+from pathfinding.core.grid    import Grid
+from pathfinding.core.finders import AStar
 
 import tkinter as tk
-import file as f
+
 from copy import deepcopy
 BW = 20
 BH = 20
@@ -122,14 +119,14 @@ class GridFrame(tk.Frame):
         for line in self.lines:
             self.canvas.delete(line)
         self.lines = []
-        for ((x1, y1), (x2, y2)) in zip(path, path[1:]):
+        for ((x1, y1), (x2, y2)) in zip(path.path, path.path[1:]):
             self.lines.append(self.canvas.create_line(*map(lambda i: OFFSET + i * BW + BW / 2, (x1, y1, x2, y2)), fill = "red", dash = (4, 2)))
-        for node in path:
+        for node in path.path:
             self.touched.append(node)
         for node in self.ends[:]:
-            if node in path:
+            if node in path.path:
                 self.ends.remove(node)
-        self.ends.append(path[-1])
+        self.ends.append(path.path[-1])
         self.canvas.pack(fill=tk.BOTH, expand=1)
     def setStart(self, x, y):
         if self.grid.walkable(x, y):
@@ -212,7 +209,7 @@ class GridView(tk.Tk):
         oldGrid = deepcopy(self.gridFrame.grid.matrix)
         self.after_cancel(self.drawGridId)
         self.drawGridId = False
-        for path in AStar.find_path(self.gridFrame.startNode(), self.gridFrame.endNode(), self.gridFrame.grid):
+        for path in AStar(self.gridFrame.startNode(), self.gridFrame.endNode(), self.gridFrame.grid).find_path_iter():
             if not self.gridFrame.solving: return
             self.drawGrid()
             self.drawPath(path)
