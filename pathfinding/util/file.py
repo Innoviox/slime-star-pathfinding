@@ -1,14 +1,14 @@
 from ..core.grid import Grid
 def save_state_to_file(gridview, filename="grid_save", fileform="{}_{}x{}.ssp"):
     f = open(fileform.format(filename, gridview.gridFrame.w, gridview.gridFrame.h), "w")
+    print("saving to", f)
     gf = gridview.gridFrame
     grid = gridview.gridFrame.grid
-    print(np.array(grid.matrix))
     for r, row in enumerate(grid.matrix):
         for c, col in enumerate(row):
-            if (r, c) == gf.end.xy():
+            if (c, r) == gf.end.xy():
                 f.write("e")
-            elif (r, c) == gf.start.xy():
+            elif (c, r) == gf.start.xy():
                 f.write("s")
             else:
                 f.write(str(col))
