@@ -22,25 +22,25 @@ Simple view usage:
     
 Package structure:
 
-|-- GitHub
-    |-- __init__.py
-    |-- test.py
-    |-- view_test.py
-    |-- pathfinding
-    |   |-- __init__.py
-    |   |-- core
-    |   |   |-- __init__.py
-    |   |   |-- finders.py
-    |   |   |-- grid.py
-    |   |   |-- heuristics.py
-    |   |   |-- node.py
-    |   |   |-- path.py
-    |   |-- util
-    |       |-- __init__.py
-    |       |-- file.py
-    |-- view
+    |-- GitHub
         |-- __init__.py
-        |-- view.py
+        |-- test.py
+        |-- view_test.py
+        |-- pathfinding
+        |   |-- __init__.py
+        |   |-- core
+        |   |   |-- __init__.py
+        |   |   |-- finders.py
+        |   |   |-- grid.py
+        |   |   |-- heuristics.py
+        |   |   |-- node.py
+        |   |   |-- path.py
+        |   |-- util
+        |       |-- __init__.py
+        |       |-- file.py
+        |-- view
+            |-- __init__.py
+            |-- view.py
 
 
 
