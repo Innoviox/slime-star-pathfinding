@@ -22,7 +22,7 @@ Simple view usage:
     
 Package structure:
 
-```
+
     |-- GitHub
         |-- __init__.py
         |-- test.py
@@ -42,7 +42,7 @@ Package structure:
         |-- view
             |-- __init__.py
             |-- view.py
-```
+
 
 
 Todo:
