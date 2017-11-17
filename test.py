@@ -1,36 +1,7 @@
-from pathfinding.core import AStar
-from pathfinding.grid import Grid
+from pathfinding import AStar, file
+import time
 
-matrix = list(list(map(int, i)) for i in (
-    '0000000000000000',
-    '0111111100101010',
-    '0100000000101010',
-    '0101111111101010',
-    '0101000000001010',
-    '0101011111101010',
-    '0101000000101010',
-    '0001111100101110',
-    '0101000000101010',
-    '0101101011101010',
-    '0101001010001000',
-    '0101101010111010',
-    '0101001010000010',
-    '0101011111111010',
-    '0101000100000010'))
-
-matrix = list(list(map(int, i)) for i in (
-    '0000',
-    '0110',
-    '0010',
-    '0000'))
-
-grid = Grid(matrix=matrix)
-
-start = grid.node(0, 0)
-end = grid.node(3, 3)
-
-path = AStar.find_path(start, end, grid)
-
-print('path length:', len(path))
-print(path)
-print(grid.toStr(path=path, start=start, end=end))
+astar = AStar(*file.load_state_from_file('grid_save_2_21x21.txt'))
+for path in astar.find_path_iter():
+    print(path) 
+    time.sleep(0.1)  
