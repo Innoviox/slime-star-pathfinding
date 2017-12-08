@@ -50,6 +50,46 @@ class AStar(object):
                         heapq.heappush(open_list, neighbor)
             #input()
         return []
+    def find_all_paths_iter(self):
+        (open_list, closed_list) = ([self.start], [])
+        self.start.g = 0
+        self.start.h = 0
+        self.start.f = 0
+        while open_list:
+            node = heapq.nsmallest(1, open_list)[0]
+            open_list.remove(node)
+            node.closed = True
+            
+            if node == self.end:
+                
+                yield node.backtrace(self), True
+            else:
+                yield node.backtrace(self), False
+                #return #node.backtrace()
+            neighbors = self.grid.neighbors(node)
+            for neighbor in neighbors:
+                if neighbor.closed:
+                    continue
+                (x, y) = neighbor.position()
+                g = node.g
+                if x - node.x == 0 or y - node.y == 0:
+                    g += 1
+                else:
+                    g += sqrt(2)
+                if not neighbor.opened or g < neighbor.g:
+                    neighbor.g = g
+                    neighbor.h = neighbor.h or self.heuristic(abs(x - self.end.x), abs(y - self.end.y))
+                    neighbor.f = neighbor.g + neighbor.h
+                    neighbor.parent = node
+
+                    if not neighbor.opened:
+                        heapq.heappush(open_list, neighbor)
+                        neighbor.opened = True
+                    else:
+                        open_list.remove(neighbor)
+                        heapq.heappush(open_list, neighbor)
+            #input()
+        return []
     def toStr(self, path):
         return self.grid.toStr(path=path,start=self.start,end=self.end)
 		

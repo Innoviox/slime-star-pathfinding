@@ -181,7 +181,7 @@ class GridView(tk.Tk):
     def __init__(self, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10, start=None, end=None, filename="grid_save"):
         tk.Tk.__init__(self)
         self.gridFrame = GridFrame(master = self, matrix = matrix, dw=dw, dh=dh, start=start, end=end)
-        self.gridFrame.grid_configure(columnspan = 3)
+        self.gridFrame.grid_configure(columnspan = 4)
         self.solveButton = tk.Button(self, text = "Solve", command = self.solve)
         self.solveButton.grid_configure(column = 0, row = 1)
         self.stopButton = tk.Button(self, text = "Stop", command = self.stop)
@@ -189,7 +189,7 @@ class GridView(tk.Tk):
         self.clearButton = tk.Button(self, text = "Clear", command = self.clear)
         self.clearButton.grid_configure(column = 2, row = 1)
         self.saveButton = tk.Button(self, text = "Save", command = lambda fn=filename: f.save_state_to_file(self, filename=fn))
-        self.saveButton.grid_configure(column = 2, row = 2)
+        self.saveButton.grid_configure(column = 3, row = 1)
         self.geometry("{width}x{height}".format(width = self.gridFrame.w * BW + OFFSET * 2, height = self.gridFrame.h * BH + OFFSET * 2 + 50))
         self.omatrix = deepcopy(self.gridFrame.grid.matrix)
         self.drawGridId = False       
@@ -209,11 +209,16 @@ class GridView(tk.Tk):
         oldGrid = deepcopy(self.gridFrame.grid.matrix)
         self.after_cancel(self.drawGridId)
         self.drawGridId = False
+        savedPaths = []
         for path in AStar(self.gridFrame.startNode(), self.gridFrame.endNode(), self.gridFrame.grid).find_path_iter():
             if not self.gridFrame.solving: return
+            
             self.drawGrid()
             self.drawPath(path)
             self.gridFrame.update()
+        for path in savedPaths:
+            print(path)
+            self.drawPath(path)
         self.gridFrame.reset(oldGrid)
         self.drawPath(path)
         self.gridFrame.solving = False
