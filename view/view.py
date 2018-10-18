@@ -178,7 +178,7 @@ class GridFrame(tk.Frame):
         self.ends = []
         
 class GridView(tk.Tk):
-    def __init__(self, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10, start=None, end=None, filename="grid_save"):
+    def __init__(self, matrix = None, dw = 1200 // BW - 10, dh = 800 // BH - 10, start=None, end=None, filename="grid_save", animated=True):
         tk.Tk.__init__(self)
         self.gridFrame = GridFrame(master = self, matrix = matrix, dw=dw, dh=dh, start=start, end=end)
         self.gridFrame.grid_configure(columnspan = 4)
@@ -192,7 +192,8 @@ class GridView(tk.Tk):
         self.saveButton.grid_configure(column = 3, row = 1)
         self.geometry("{width}x{height}".format(width = self.gridFrame.w * BW + OFFSET * 2, height = self.gridFrame.h * BH + OFFSET * 2 + 50))
         self.omatrix = deepcopy(self.gridFrame.grid.matrix)
-        self.drawGridId = False       
+        self.drawGridId = False
+        self.animated = animated
     def drawGrid(self):
         self.gridFrame.drawGrid()      
     def drawPath(self, path):
@@ -212,10 +213,10 @@ class GridView(tk.Tk):
         savedPaths = []
         for path in AStar(self.gridFrame.startNode(), self.gridFrame.endNode(), self.gridFrame.grid).find_path_iter():
             if not self.gridFrame.solving: return
-            
-            self.drawGrid()
-            self.drawPath(path)
-            self.gridFrame.update()
+            if self.animated:
+                self.drawGrid()
+                self.drawPath(path)
+                self.gridFrame.update()
         for path in savedPaths:
             print(path)
             self.drawPath(path)
