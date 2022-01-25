@@ -192,7 +192,7 @@ class GridView(tk.Tk):
         self.saveButton.grid_configure(column = 3, row = 1)
         self.geometry("{width}x{height}".format(width = self.gridFrame.w * BW + OFFSET * 2, height = self.gridFrame.h * BH + OFFSET * 2 + 50))
         self.omatrix = deepcopy(self.gridFrame.grid.matrix)
-        self.drawGridId = False
+        # self.drawGridId = False
         self.animated = animated
     def drawGrid(self):
         self.gridFrame.drawGrid()      
@@ -208,8 +208,8 @@ class GridView(tk.Tk):
         self.gridFrame.rte()
         self.gridFrame.drawDefaultGrid()
         oldGrid = deepcopy(self.gridFrame.grid.matrix)
-        self.after_cancel(self.drawGridId)
-        self.drawGridId = False
+        # self.after_cancel(self.drawGridId)
+        # self.drawGridId = False
         savedPaths = []
         for path in AStar(self.gridFrame.startNode(), self.gridFrame.endNode(), self.gridFrame.grid).find_path_iter():
             if not self.gridFrame.solving: return
